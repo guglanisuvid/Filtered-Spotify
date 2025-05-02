@@ -1,0 +1,36 @@
+{
+    "manifest_version": 3,
+    "name": "Filtered Spotify",
+    "description": "A chrome extension that filters Spotify songs based on user-defined criteria.",
+    "version": "1.0.0",
+    "action": {
+        "default_popup": "index.html",
+        "default_icon": {
+            "16": "/vite.svg",
+            "48": "/vite.svg",
+            "128": "/vite.svg"
+        }
+      },
+      "background": {
+        "service_worker": "/background.js",
+        "type": "module"
+      },
+      "icons": {
+        "16": "/vite.svg",
+        "48": "/vite.svg",
+        "128": "/vite.svg"
+      },
+    "permissions": [
+        "activeTab",
+        "offscreen"
+    ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'"
+    },
+    "web_accessible_resources": [
+        {
+          "resources": ["offscreen.html"],
+          "matches": ["<all_urls>"]
+        }
+      ]
+}
