@@ -6,21 +6,19 @@ iframe.src = _URL;
 document.documentElement.appendChild(iframe);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type !== 'firebase-auth' || message.target !== 'offscreen') {
+    if (message.type !== 'firebase-auth') {
+        console.log("Error: ", message)
         sendResponse({ msg: 'Invalid message type or target', authRes: false });
         return false;
     }
 
     const handleIframeMessage = (message) => {
         try {
-            if (message.data.startsWith('!_{')) {
-                return;
-            }
+            // if (typeof message.data === 'string' && message.data.startsWith('!_{')) return;
 
-            const data = JSON.parse(message.data);
-
-            globalThis.removeEventListener('message', handleIframeMessage, false);
-            sendResponse(data);
+            // globalThis.removeEventListener('message', handleIframeMessage, false);
+            // sendResponse(message.data);
+            console.log(message)
         } catch (e) {
             sendResponse(e);
         }
@@ -28,7 +26,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     globalThis.addEventListener('message', handleIframeMessage, false);
 
-    iframe.contentWindow.postMessage({ "initAuth": true }, new URL(_URL).origin);
+    iframe.contentWindow.postMessage(message, new URL(_URL).origin);
 
     return true;
 });

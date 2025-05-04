@@ -5,7 +5,7 @@ import React from "react";
 const SignIn = () => {
   const handleSignIn = async () => {
     await chrome.runtime.sendMessage({
-      type: "auth",
+      type: "auth-request",
       target: "background",
     });
 
