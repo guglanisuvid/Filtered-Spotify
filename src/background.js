@@ -2,7 +2,8 @@
 
 // Firebase App Initialization
 import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signInWithCredential, signOut } from "firebase/auth";
+import { GoogleAuthProvider } from "firebase/auth/web-extension";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -18,29 +19,62 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Check if the user is authenticated
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    console.log('Background: User is signed in (on extension load):', user);
+let connectedPort = null;
 
-    // chrome.storage.local.set({ isLoggedIn: true, user: JSON.parse(JSON.stringify(user)) });
-  } else {
-    console.log('Background: User is signed out (on extension load):', user);
+chrome.runtime.onConnect.addListener(async (port) => {
+  connectedPort = port;
 
-    //   chrome.storage.local.set({ isLoggedIn: false, user: null });
+  if (port.name === "signout-request") signOut(auth);
+
+  if (port.name === "user-request") {
+    const user = auth.currentUser;
+    port.postMessage({
+      type: "user-data",
+      user: user ?
+        {
+          name: user?.displayName,
+          email: user?.email,
+          photo: user?.photoURL,
+          uid: user?.uid,
+        }
+        : null
+    });
   }
+
+  port.onDisconnect.addListener(() => {
+    connectedPort = null;
+  });
 });
 
+// Check if the user is authenticated
+onAuthStateChanged(auth, (user) => {
+  if (connectedPort) {
+    connectedPort.postMessage({
+      type: "user-data",
+      user: user
+        ? {
+          name: user.displayName,
+          email: user.email,
+          photo: user.photoURL,
+          uid: user.uid,
+        }
+        : null,
+    });
+  }
+});
 
 const OFFSCREEN_DOCUMENT_PATH = chrome.runtime.getURL("/offscreen.html"); // Offscreen Document Path
 
 let creatingOffscreenDocument = null; // Variable to track the creation of the offscreen document
 
 // Listen for messages from the popup or other parts of the extension
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async (message) => {
   if (message.type === "auth-request" && message.target === "background") {
     const res = await firebaseAuth();
-    sendResponse(res);
+    if (res.type === "Auth Result" && res.idToken && res.user) {
+      const credential = GoogleAuthProvider.credential(res.idToken);
+      await signInWithCredential(auth, credential);
+    }
   }
 
   return false;
@@ -57,19 +91,24 @@ async function hasDocument() {
 // setup the offscreen document
 async function setupOffscreenDocument(path) {
   if (await hasDocument()) {
-    return;
-  }
+    return
+  };
+
   if (creatingOffscreenDocument) {
     await creatingOffscreenDocument;
-  } else {
+    return;
+  }
+
+  try {
     creatingOffscreenDocument = chrome.offscreen.createDocument({
       url: path,
-      reasons: [
-        'DOM_SCRAPING'
-      ],
-      justification: 'authentication'
+      reasons: ['DOM_SCRAPING'],
+      justification: 'authentication',
     });
     await creatingOffscreenDocument;
+  } catch (e) {
+    console.error("Error creating offscreen document:", e);
+  } finally {
     creatingOffscreenDocument = null;
   }
 }
@@ -77,18 +116,20 @@ async function setupOffscreenDocument(path) {
 // close the offscreen document
 async function closeOffscreenDocument() {
   if (await hasDocument()) {
-    await chrome.offscreen.closeDocument();
+    try {
+      await chrome.offscreen.closeDocument();
+    } catch (e) {
+      console.error("Failed to close offscreen document:", e);
+    }
   }
 }
 
 // get the auth from the offscreen document
 async function getAuthentication() {
-  const auth = await chrome.runtime.sendMessage({
+  return await chrome.runtime.sendMessage({
     type: "firebase-auth",
     config: firebaseConfig
   });
-
-  return auth;
 }
 
 // main function to handle firebase authentication
@@ -96,10 +137,8 @@ async function firebaseAuth() {
   await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
 
   const auth = await getAuthentication();
-  console.log(auth);
 
   await closeOffscreenDocument();
-
 
   return auth;
 }

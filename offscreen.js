@@ -7,18 +7,17 @@ document.documentElement.appendChild(iframe);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type !== 'firebase-auth') {
-        console.log("Error: ", message)
         sendResponse({ msg: 'Invalid message type or target', authRes: false });
         return false;
     }
 
     const handleIframeMessage = (message) => {
         try {
-            // if (typeof message.data === 'string' && message.data.startsWith('!_{')) return;
+            if (typeof message.data === 'string' && message.data.startsWith('!_{')) return;
 
-            // globalThis.removeEventListener('message', handleIframeMessage, false);
-            // sendResponse(message.data);
-            console.log(message)
+            globalThis.removeEventListener('message', handleIframeMessage, false);
+
+            sendResponse(message.data);
         } catch (e) {
             sendResponse(e);
         }

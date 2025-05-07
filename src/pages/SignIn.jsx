@@ -1,15 +1,22 @@
 /* global chrome */
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-const SignIn = () => {
+const SignIn = ({ user }) => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/filters");
+    }
+  }, [user]);
+
   const handleSignIn = async () => {
-    await chrome.runtime.sendMessage({
+    chrome.runtime.sendMessage({
       type: "auth-request",
       target: "background",
     });
-
-    return true;
   };
 
   return (
