@@ -4,6 +4,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged, signInWithCredential, signOut } from "firebase/auth";
 import { GoogleAuthProvider } from "firebase/auth/web-extension";
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -18,15 +19,16 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 let connectedPort = null;
 
 chrome.runtime.onConnect.addListener(async (port) => {
   connectedPort = port;
 
-  if (port.name === "signout-request") signOut(auth);
-
-  if (port.name === "user-request") {
+  if (port.name === "signout-request") {
+    signOut(auth)
+  } else if (port.name === "user-request") {
     const user = auth.currentUser;
     port.postMessage({
       type: "user-data",
@@ -39,6 +41,25 @@ chrome.runtime.onConnect.addListener(async (port) => {
         }
         : null
     });
+  } else if (port.name === "get-spotify-token") {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const data = await getDoc(doc(db, "userData", user.uid));
+        if (data.exists()) {
+          const result = data.data();
+          port.postMessage({
+            type: "spotify-tokens",
+            tokens: result.spotify.accessToken && result.spotify.refreshToken ? result.spotify : null
+          });
+        } else {
+          return null;
+        }
+      }
+    } catch (error) {
+      console.error("Error getting user data: ", error);
+      return null;
+    }
   }
 
   port.onDisconnect.addListener(() => {

@@ -16,7 +16,6 @@ const App = () => {
     port.onMessage.addListener((message) => {
       if (message.type === "user-data") {
         setUser(message?.user);
-        console.log(message);
       }
     });
 
