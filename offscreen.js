@@ -1,12 +1,11 @@
 /* eslint-disable no-undef */
-
 const _URL = import.meta.env.VITE_IFRAME_URL;
 const iframe = document.createElement('iframe');
 iframe.src = _URL;
 document.documentElement.appendChild(iframe);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type !== 'firebase-auth') {
+    if (message.type !== 'signin-request' && message.config) {
         sendResponse({ msg: 'Invalid message type or target', authRes: false });
         return false;
     }

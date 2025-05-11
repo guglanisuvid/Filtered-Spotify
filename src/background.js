@@ -1,70 +1,93 @@
 /* eslint-disable no-undef */
-
-// Firebase App Initialization
 import { initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged, signInWithCredential, signOut } from "firebase/auth";
 import { GoogleAuthProvider } from "firebase/auth/web-extension";
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { spotifyTokenRefresh } from "./utils/spotifyTokenRefresh";
+import { setupOffscreenDocument } from "./utils/setupOffscreenDocument";
+import { closeOffscreenDocument } from "./utils/closeOffscreenDocument";
+import { firebaseConfig } from "./utils/firebaseConfig";
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
-
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const app = initializeApp(firebaseConfig); // Initialize Firebase
+const auth = getAuth(app); // Initialize Firebase Authentication
+const db = getFirestore(app); // Initialize Firestore
 
 let connectedPort = null;
 
+// Listen for connections from the popup or other parts of the extension
 chrome.runtime.onConnect.addListener(async (port) => {
   connectedPort = port;
 
-  if (port.name === "signout-request") {
-    signOut(auth)
-  } else if (port.name === "user-request") {
-    const user = auth.currentUser;
-    port.postMessage({
-      type: "user-data",
-      user: user ?
-        {
-          name: user?.displayName,
-          email: user?.email,
-          photo: user?.photoURL,
-          uid: user?.uid,
-        }
-        : null
-    });
-  } else if (port.name === "get-spotify-token") {
+  const user = auth.currentUser;
+
+  if (port.name === "signout-request") { // Handle sign out request
     try {
-      const user = auth.currentUser;
-      if (user) {
-        const data = await getDoc(doc(db, "userData", user.uid));
-        if (data.exists()) {
-          const result = data.data();
-          port.postMessage({
-            type: "spotify-tokens",
-            tokens: result.spotify.accessToken && result.spotify.refreshToken ? result.spotify : null
-          });
-        } else {
-          return null;
-        }
-      }
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error signing out: ", error);
+    }
+  } else if (port.name === "user-request") { // Handle user data request
+    try {
+      port.postMessage({
+        type: "user-data",
+        user: user ?
+          {
+            name: user?.displayName,
+            email: user?.email,
+            photo: user?.photoURL,
+            uid: user?.uid,
+          }
+          : null
+      });
     } catch (error) {
       console.error("Error getting user data: ", error);
-      return null;
+    }
+  } else if (port.name === "get-spotify-tokens") { // Handle Spotify tokens request
+    try {
+      if (user) {
+        let data = await getDoc(doc(db, "userData", user.uid)); // Get user data from Firestore
+        if (data.exists()) {
+          let result = data.data();
+          // Check if the user has authorized Spotify
+          if (!result.spotify) {
+            port.postMessage({
+              type: "spotify-not-authorized",
+            });
+            return;
+          }
+
+          // Check if the access token is expired
+          if (result.spotify && (new Date() - new Date(result.spotify.recievedAt)) / 1000 > result.spotify.expiresIn - 30) {
+            data = await spotifyTokenRefresh(result.spotify.refreshToken);
+            await setDoc(doc(db, "userData", user.uid), {
+              spotify: {
+                accessToken: data?.access_token,
+                refreshToken: data?.refresh_token,
+                expiresIn: data?.expires_in,
+                recievedAt: new Date().toISOString()
+              }
+            }, { merge: true });
+
+            data = await getDoc(doc(db, "userData", user.uid));
+            if (data.exists()) {
+              result = data.data();
+            }
+          }
+          // Store the Spotify tokens in chrome storage
+          chrome.storage.local.set({
+            spotifyTokens: result.spotify
+          });
+        }
+      }
+
+      // Disconnect the port when done
+      port.onDisconnect.addListener(() => {
+        connectedPort = null;
+      });
+    } catch (error) {
+      console.error("Error getting user data: ", error);
     }
   }
-
-  port.onDisconnect.addListener(() => {
-    connectedPort = null;
-  });
 });
 
 // Check if the user is authenticated
@@ -84,15 +107,11 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-const OFFSCREEN_DOCUMENT_PATH = chrome.runtime.getURL("/offscreen.html"); // Offscreen Document Path
-
-let creatingOffscreenDocument = null; // Variable to track the creation of the offscreen document
-
 // Listen for messages from the popup or other parts of the extension
 chrome.runtime.onMessage.addListener(async (message) => {
-  if (message.type === "auth-request" && message.target === "background") {
+  if (message.type === "auth-request" && message.target === "background") { // Handle authentication request
     const res = await firebaseAuth();
-    if (res.type === "Auth Result" && res.idToken && res.user) {
+    if (res.type === "Auth Result" && res.idToken && res.user) { // Check if the authentication was successful
       const credential = GoogleAuthProvider.credential(res.idToken);
       await signInWithCredential(auth, credential);
     }
@@ -101,65 +120,20 @@ chrome.runtime.onMessage.addListener(async (message) => {
   return false;
 });
 
-// check if the offscreen document is already created
-async function hasDocument() {
-  const matchedClients = await clients.matchAll();
-  return matchedClients.some(
-    (c) => c.url === chrome.runtime.getURL(OFFSCREEN_DOCUMENT_PATH)
-  );
-}
-
-// setup the offscreen document
-async function setupOffscreenDocument(path) {
-  if (await hasDocument()) {
-    return
-  };
-
-  if (creatingOffscreenDocument) {
-    await creatingOffscreenDocument;
-    return;
-  }
-
-  try {
-    creatingOffscreenDocument = chrome.offscreen.createDocument({
-      url: path,
-      reasons: ['DOM_SCRAPING'],
-      justification: 'authentication',
-    });
-    await creatingOffscreenDocument;
-  } catch (e) {
-    console.error("Error creating offscreen document:", e);
-  } finally {
-    creatingOffscreenDocument = null;
-  }
-}
-
-// close the offscreen document
-async function closeOffscreenDocument() {
-  if (await hasDocument()) {
-    try {
-      await chrome.offscreen.closeDocument();
-    } catch (e) {
-      console.error("Failed to close offscreen document:", e);
-    }
-  }
-}
-
-// get the auth from the offscreen document
-async function getAuthentication() {
-  return await chrome.runtime.sendMessage({
-    type: "firebase-auth",
-    config: firebaseConfig
-  });
-}
-
-// main function to handle firebase authentication
+// Handling authentication request from the popup
 async function firebaseAuth() {
-  await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
+  try {
+    await setupOffscreenDocument();
 
-  const auth = await getAuthentication();
+    const auth = await chrome.runtime.sendMessage({
+      type: "signin-request",
+      config: firebaseConfig,
+    });
 
-  await closeOffscreenDocument();
+    await closeOffscreenDocument();
 
-  return auth;
+    return auth;
+  } catch (error) {
+    console.error("Error during authentication: ", error);
+  }
 }
