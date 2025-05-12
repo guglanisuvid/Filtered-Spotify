@@ -3,8 +3,16 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const SignIn = ({ user }) => {
+const SignIn = ({ handleUser, user }) => {
   const navigate = useNavigate();
+
+  const handleSignIn = async () => {
+    await chrome.runtime.sendMessage({
+      type: "user-signin-request",
+      target: "background",
+    });
+    handleUser("user-data-request");
+  };
 
   useEffect(() => {
     if (user) {
@@ -12,15 +20,8 @@ const SignIn = ({ user }) => {
     }
   }, [user]);
 
-  const handleSignIn = async () => {
-    chrome.runtime.sendMessage({
-      type: "auth-request",
-      target: "background",
-    });
-  };
-
   return (
-    <div className="h-full w-full text-center flex flex-col gap-8 justify-center items-center p-4">
+    <div className="h-full w-full text-center flex flex-col gap-8 justify-center items-center">
       <div className="flex flex-col gap-4 justify-between items-center">
         <div>
           <h1 className="text-3xl font-semibold">Filtered Spotify</h1>

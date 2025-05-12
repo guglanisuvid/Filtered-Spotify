@@ -5,9 +5,9 @@ iframe.src = _URL;
 document.documentElement.appendChild(iframe);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type !== 'signin-request' && message.config) {
-        sendResponse({ msg: 'Invalid message type or target', authRes: false });
-        return false;
+    if (message.type !== 'signin-request' || !message.config) {
+        sendResponse({ msg: 'Invalid message type or config' });
+        return;
     }
 
     const handleIframeMessage = (message) => {

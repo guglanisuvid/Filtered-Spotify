@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { handleArtistSearch } from "../utils/handleArtistSearch";
 
 const Filters = ({ handleUser, user }) => {
   const navigate = useNavigate();
@@ -14,31 +13,38 @@ const Filters = ({ handleUser, user }) => {
   const [artists, setArtists] = useState([]);
   const [artistSearch, setArtistSearch] = useState("");
 
-  const handleSignOut = async () => {
-    return await handleUser("signout-request");
-  };
+  useEffect(() => {
+    const port = chrome.runtime.connect({
+      name: "spotify-token-request",
+    });
 
-  const handleFilterSongs = () => {
-    console.log("handleFilterSongs clicked");
-  };
+    port.onMessage.addListener((message) => {
+      if (message.type === "spotify-not-authorized") {
+        navigate("/spotifyAuthorizationRedirect");
+      } else if (message.type === "spotify-refresh-failed") {
+        console.log("Spotify token refresh failed");
+      }
+    });
+
+    return () => {
+      port.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
-    const handleSpotifyTokens = () => {
-      const port = chrome.runtime.connect({
-        name: "get-spotify-tokens",
-      });
+    const port = chrome.runtime.connect({
+      name: "spotify-profile-request",
+    });
 
-      // port.onMessage.addListener((message) => {
-      //   // if (message.type === "spotify-not-authorized") {
-      //   // }
-      // });
+    port.onMessage.addListener((message) => {
+      if (message.type === "spotify-not-authorized") {
+        navigate("/spotifyAuthorizationRedirect");
+      }
+    });
 
-      return () => {
-        port.disconnect();
-      };
+    return () => {
+      port.disconnect();
     };
-
-    handleSpotifyTokens();
   }, []);
 
   useEffect(() => {
@@ -47,21 +53,28 @@ const Filters = ({ handleUser, user }) => {
     }
   }, [user]);
 
+  const handleArtistSearchClick = () => {
+    if (artistSearch.trim().length) {
+      chrome.runtime.sendMessage({
+        type: "artist-search-request",
+        artistSearch: artistSearch.trim(),
+      });
+    } else {
+      console.log("Please enter a valid artist name");
+    }
+  };
+
+  const handleFilterSongs = () => {
+    console.log("handleFilterSongs clicked");
+  };
+
   return (
-    <div className="w-full h-full p-4 flex flex-col gap-8 justify-between items-center text-center">
-      <div className="flex flex-col justify-between items-center">
-        <h2 className="text-lg font-medium text-text-100">
-          <span className="text-text-200 font-medium text-sm">
-            Welcome back,
-          </span>{" "}
-          {user?.name}
-        </h2>
-        <h1 className="text-3xl font-semibold">Filtered Spotify</h1>
-      </div>
+    <div className="w-full h-full flex flex-col gap-8 justify-between items-center text-center">
+      <h1 className="text-3xl font-semibold">Filtered Spotify</h1>
       <div className="w-full flex-1 flex flex-col gap-8 justify-between items-center">
         <div className="flex-1 w-full bg-bg-200 px-4 py-2 flex flex-col gap-2 justify-between items-center rounded-xl">
           <h3 className="text-md font-semibold">Selected Artists</h3>
-          <div className="flex-1 flex flex-col gap-2 justify-between items-center">
+          <div className="flex-1 flex gap-2 justify-between items-center">
             <div>{artists.length ? "Hello World" : "No artist selected"}</div>
           </div>
         </div>
@@ -76,7 +89,7 @@ const Filters = ({ handleUser, user }) => {
             disabled={artists.length >= 5}
           />
           <button
-            onClick={() => handleArtistSearch(artistSearch)}
+            onClick={() => handleArtistSearchClick(artistSearch)}
             className="w-8 aspect-square bg-text-100 text-bg-300 font-semibold outline-none rounded-full cursor-pointer"
             disabled={artists.length >= 5}
           >
@@ -121,7 +134,7 @@ const Filters = ({ handleUser, user }) => {
           Go to Dashboard
         </button>
         <button
-          onClick={handleSignOut}
+          onClick={() => handleUser("signout-request")}
           className="px-4 py-2 border-2 rounded-lg hover:cursor-pointer"
         >
           Sign Out

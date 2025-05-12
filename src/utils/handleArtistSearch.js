@@ -11,13 +11,11 @@ export const handleArtistSearch = async (artistSearch) => {
                 headers: { Authorization: `Bearer ${accessToken}` },
             });
 
-            // if (res.ok) {
-            //     const data = await res.json();
-            //     console.log(data);
-            // }
+            if (res.ok) {
+                const data = await res.json();
+                console.log(data);
+            }
             console.log(res);
-
-
         } else {
             console.log("Please enter a valid artist name");
         }

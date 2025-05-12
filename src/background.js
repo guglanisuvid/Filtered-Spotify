@@ -1,12 +1,13 @@
-/* eslint-disable no-undef */
+/* global chrome*/
 import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged, signInWithCredential, signOut } from "firebase/auth";
-import { GoogleAuthProvider } from "firebase/auth/web-extension";
+import { getAuth } from "firebase/auth";
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { spotifyTokenRefresh } from "./utils/spotifyTokenRefresh";
-import { setupOffscreenDocument } from "./utils/setupOffscreenDocument";
-import { closeOffscreenDocument } from "./utils/closeOffscreenDocument";
 import { firebaseConfig } from "./utils/firebaseConfig";
+import { portConnectListener } from "./utils/portConnectListener";
+import { messageListener } from "./utils/messageListener";
+import { authStateChange } from "./utils/authStateChange";
+import { spotifyProfileRequest } from "./utils/spotifyProfileRequest";
 
 const app = initializeApp(firebaseConfig); // Initialize Firebase
 const auth = getAuth(app); // Initialize Firebase Authentication
@@ -14,126 +15,78 @@ const db = getFirestore(app); // Initialize Firestore
 
 let connectedPort = null;
 
+authStateChange(auth, connectedPort);
+messageListener(auth);
+portConnectListener(connectedPort, auth);
+
 // Listen for connections from the popup or other parts of the extension
 chrome.runtime.onConnect.addListener(async (port) => {
   connectedPort = port;
-
   const user = auth.currentUser;
 
-  if (port.name === "signout-request") { // Handle sign out request
+  if (port.name === "spotify-token-request") { // Handle Spotify tokens request
     try {
-      await signOut(auth);
-    } catch (error) {
-      console.error("Error signing out: ", error);
-    }
-  } else if (port.name === "user-request") { // Handle user data request
-    try {
-      port.postMessage({
-        type: "user-data",
-        user: user ?
-          {
-            name: user?.displayName,
-            email: user?.email,
-            photo: user?.photoURL,
-            uid: user?.uid,
-          }
-          : null
-      });
+      if (user) await getSpotifyTokens(port, user.uid);
     } catch (error) {
       console.error("Error getting user data: ", error);
     }
-  } else if (port.name === "get-spotify-tokens") { // Handle Spotify tokens request
+  } else if (port.name === "spotify-profile-request") { // Handle Spotify tokens request
     try {
-      if (user) {
-        let data = await getDoc(doc(db, "userData", user.uid)); // Get user data from Firestore
-        if (data.exists()) {
-          let result = data.data();
-          // Check if the user has authorized Spotify
-          if (!result.spotify) {
-            port.postMessage({
-              type: "spotify-not-authorized",
-            });
-            return;
-          }
-
-          // Check if the access token is expired
-          if (result.spotify && (new Date() - new Date(result.spotify.recievedAt)) / 1000 > result.spotify.expiresIn - 30) {
-            data = await spotifyTokenRefresh(result.spotify.refreshToken);
-            await setDoc(doc(db, "userData", user.uid), {
-              spotify: {
-                accessToken: data?.access_token,
-                refreshToken: data?.refresh_token,
-                expiresIn: data?.expires_in,
-                recievedAt: new Date().toISOString()
-              }
-            }, { merge: true });
-
-            data = await getDoc(doc(db, "userData", user.uid));
-            if (data.exists()) {
-              result = data.data();
-            }
-          }
-          // Store the Spotify tokens in chrome storage
-          chrome.storage.local.set({
-            spotifyTokens: result.spotify
-          });
-        }
-      }
-
-      // Disconnect the port when done
-      port.onDisconnect.addListener(() => {
-        connectedPort = null;
-      });
+      const accessToken = await getSpotifyTokens(port, user.uid);
+      await spotifyProfileRequest(accessToken);
     } catch (error) {
       console.error("Error getting user data: ", error);
     }
   }
+
+  port.onDisconnect.addListener(() => {
+    connectedPort = null;
+  });
 });
 
-// Check if the user is authenticated
-onAuthStateChanged(auth, (user) => {
-  if (connectedPort) {
-    connectedPort.postMessage({
-      type: "user-data",
-      user: user
-        ? {
-          name: user.displayName,
-          email: user.email,
-          photo: user.photoURL,
-          uid: user.uid,
-        }
-        : null,
-    });
+// Function to handle spotify token retrieval and refresh
+const getSpotifyTokens = async (port, uid) => {
+  const data = await getDoc(doc(db, "userData", uid));
+  if (!data.exists()) return;
+
+  let result = data.data(); // Fetch the user data from Firestore
+
+  if (!result.spotify) { // Check if Spotify data exists
+    port.postMessage({ type: "spotify-not-authorized" });
+    return;
   }
-});
 
-// Listen for messages from the popup or other parts of the extension
-chrome.runtime.onMessage.addListener(async (message) => {
-  if (message.type === "auth-request" && message.target === "background") { // Handle authentication request
-    const res = await firebaseAuth();
-    if (res.type === "Auth Result" && res.idToken && res.user) { // Check if the authentication was successful
-      const credential = GoogleAuthProvider.credential(res.idToken);
-      await signInWithCredential(auth, credential);
+  // Check if the token is expired
+  const isExpired =
+    (new Date() - new Date(result.spotify.recievedAt)) / 1000 >
+    result.spotify.expiresIn - 30;
+
+  if (isExpired) { // Check if the token is expired
+    const refreshed = await spotifyTokenRefresh(result.spotify.refreshToken);
+    if (!refreshed?.access_token) {
+      port.postMessage({ type: "spotify-refresh-failed" });
+      return;
+    }
+
+    // Update the token in Firestore
+    await setDoc(doc(db, "userData", uid),
+      {
+        spotify: {
+          accessToken: refreshed.access_token,
+          refreshToken: refreshed.refresh_token,
+          expiresIn: refreshed.expires_in,
+          recievedAt: new Date().toISOString(),
+        },
+      }, { merge: true });
+
+    const updated = await getDoc(doc(db, "userData", uid)); // Fetch the updated document
+    if (updated.exists()) { // Check if the document exists
+      result = updated.data();
     }
   }
 
-  return false;
-});
+  ({ spotifyTokens: result.spotify }); // Store the tokens in local storage area
+  port.postMessage({ type: "spotify-tokens-updated" }); // Notify the popup that the tokens have been updated
 
-// Handling authentication request from the popup
-async function firebaseAuth() {
-  try {
-    await setupOffscreenDocument();
-
-    const auth = await chrome.runtime.sendMessage({
-      type: "signin-request",
-      config: firebaseConfig,
-    });
-
-    await closeOffscreenDocument();
-
-    return auth;
-  } catch (error) {
-    console.error("Error during authentication: ", error);
-  }
-}
+  return result.spotify.accessToken; // Return the access token
+};
