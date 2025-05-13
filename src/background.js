@@ -7,7 +7,6 @@ import { firebaseConfig } from "./utils/firebaseConfig";
 import { portConnectListener } from "./utils/portConnectListener";
 import { messageListener } from "./utils/messageListener";
 import { authStateChange } from "./utils/authStateChange";
-import { spotifyProfileRequest } from "./utils/spotifyProfileRequest";
 
 const app = initializeApp(firebaseConfig); // Initialize Firebase
 const auth = getAuth(app); // Initialize Firebase Authentication
@@ -27,13 +26,6 @@ chrome.runtime.onConnect.addListener(async (port) => {
   if (port.name === "spotify-token-request") { // Handle Spotify tokens request
     try {
       if (user) await getSpotifyTokens(port, user.uid);
-    } catch (error) {
-      console.error("Error getting user data: ", error);
-    }
-  } else if (port.name === "spotify-profile-request") { // Handle Spotify tokens request
-    try {
-      const accessToken = await getSpotifyTokens(port, user.uid);
-      await spotifyProfileRequest(accessToken);
     } catch (error) {
       console.error("Error getting user data: ", error);
     }

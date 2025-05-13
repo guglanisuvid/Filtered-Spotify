@@ -1,17 +1,11 @@
 /* global chrome */
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import Navbar from "../components/Navbar";
+import FiltersContent from "../components/FiltersContent";
 
 const Filters = ({ handleUser, user }) => {
   const navigate = useNavigate();
-  const [dateRange, setDateRange] = useState([null, null]);
-  const [startDate, endDate] = dateRange;
-  const [artists, setArtists] = useState([]);
-  const [artistSearch, setArtistSearch] = useState("");
 
   useEffect(() => {
     const port = chrome.runtime.connect({
@@ -32,113 +26,16 @@ const Filters = ({ handleUser, user }) => {
   }, []);
 
   useEffect(() => {
-    const port = chrome.runtime.connect({
-      name: "spotify-profile-request",
-    });
-
-    port.onMessage.addListener((message) => {
-      if (message.type === "spotify-not-authorized") {
-        navigate("/spotifyAuthorizationRedirect");
-      }
-    });
-
-    return () => {
-      port.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
     if (!user) {
       navigate("/");
     }
   }, [user]);
 
-  const handleArtistSearchClick = () => {
-    if (artistSearch.trim().length) {
-      chrome.runtime.sendMessage({
-        type: "artist-search-request",
-        artistSearch: artistSearch.trim(),
-      });
-    } else {
-      console.log("Please enter a valid artist name");
-    }
-  };
-
-  const handleFilterSongs = () => {
-    console.log("handleFilterSongs clicked");
-  };
-
   return (
-    <div className="w-full h-full flex flex-col gap-8 justify-between items-center text-center">
-      <h1 className="text-3xl font-semibold">Filtered Spotify</h1>
-      <div className="w-full flex-1 flex flex-col gap-8 justify-between items-center">
-        <div className="flex-1 w-full bg-bg-200 px-4 py-2 flex flex-col gap-2 justify-between items-center rounded-xl">
-          <h3 className="text-md font-semibold">Selected Artists</h3>
-          <div className="flex-1 flex gap-2 justify-between items-center">
-            <div>{artists.length ? "Hello World" : "No artist selected"}</div>
-          </div>
-        </div>
-        <div className="w-full flex gap-4 justify-between items-center">
-          <input
-            className="flex-1 px-4 py-2 bg-bg-300 outline-none rounded-full placeholder:text-text-200 placeholder:opacity-64"
-            type="text"
-            placeholder="Up to 5 artists"
-            onChange={(e) => {
-              setArtistSearch(e.target.value);
-            }}
-            disabled={artists.length >= 5}
-          />
-          <button
-            onClick={() => handleArtistSearchClick(artistSearch)}
-            className="w-8 aspect-square bg-text-100 text-bg-300 font-semibold outline-none rounded-full cursor-pointer"
-            disabled={artists.length >= 5}
-          >
-            <FontAwesomeIcon icon={faSearch} className="text-md" />
-          </button>
-        </div>
-        <div className="w-full flex gap-4 justify-center items-center">
-          <DatePicker
-            startDate={startDate}
-            endDate={endDate}
-            onChange={(update) => {
-              setDateRange(update);
-            }}
-            dateFormat={"MM/YYYY"}
-            minDate={new Date(1951, 0)}
-            maxDate={new Date()}
-            className="px-4 py-2 bg-bg-300 outline-none rounded-full"
-            placeholderText="Select Date Range"
-            selectsRange
-            showMonthYearPicker
-            withPortal
-            fixedHeight
-            isClearable
-          />
-          <button
-            onClick={handleFilterSongs}
-            className="px-4 py-2 bg-text-100 text-bg-300 font-semibold whitespace-nowrap outline-none rounded-full"
-          >
-            Get Songs
-          </button>
-        </div>
-      </div>
-      <div className="w-full flex gap-4 justify-center items-center">
-        <button
-          onClick={() =>
-            chrome.tabs.create({
-              url: "http://127.0.0.1:5173/filtered-spotify/dashboard",
-            })
-          }
-          className="px-4 py-2 border-2 rounded-lg hover:cursor-pointer"
-        >
-          Go to Dashboard
-        </button>
-        <button
-          onClick={() => handleUser("signout-request")}
-          className="px-4 py-2 border-2 rounded-lg hover:cursor-pointer"
-        >
-          Sign Out
-        </button>
+    <div className="w-full h-full flex flex-col gap-4 justify-between items-center text-center">
+      <Navbar handleUser={handleUser} userName={user?.name} />
+      <div className="flex-1">
+        <FiltersContent />
       </div>
     </div>
   );
