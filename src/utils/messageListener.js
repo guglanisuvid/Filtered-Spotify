@@ -1,19 +1,32 @@
 /* global chrome */
-
-import { GoogleAuthProvider } from "firebase/auth/web-extension";
+import { signOut } from "firebase/auth/web-extension";
 import { userSignIn } from "./userSignIn";
-import { signInWithCredential } from "firebase/auth";
+// import { signInWithCredential, signOut } from "firebase/auth";
 
 export function messageListener(auth) {
-    chrome.runtime.onMessage.addListener(async (message) => {
-        if (message.type === "user-signin-request" && message.target === "background") { // Handle authentication request
-            const res = await userSignIn();
-            if (res.type === "Auth Result" && res.idToken && res.user) { // Check if the authentication was successful
-                const credential = GoogleAuthProvider.credential(res.idToken);
-                await signInWithCredential(auth, credential);
-            }
-        }
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.type === "user-signin-request" && message.target === "background") { // Handle sign in request
+            (async () => {
+                try {
+                    await userSignIn(auth);
+                    sendResponse({ type: "signin-success" });
+                } catch (error) {
+                    sendResponse({ type: "signin-failure", error: error.message });
+                }
+            })();
 
-        return false;
+            return true;
+        } else if (message.type === "user-signout-request" && message.target === "background") { // Handle sign out request
+            (async () => {
+                try {
+                    await signOut(auth);
+                    sendResponse({ type: "signout-success" });
+                } catch (error) {
+                    sendResponse({ type: "signout-failure", error: error.message });
+                }
+            })();
+
+            return true;
+        }
     });
 }

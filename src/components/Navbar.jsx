@@ -1,3 +1,4 @@
+/* global chrome */
 import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useState } from "react";
@@ -34,9 +35,13 @@ const Navbar = ({ handleUser, userName }) => {
                 Dashboard
               </Link>
               <button
-                onClick={() => {
+                onClick={async () => {
                   setToggleMenu(false);
-                  handleUser("signout-request");
+                  await chrome.runtime.sendMessage({
+                    type: "user-signout-request",
+                    target: "background",
+                  });
+                  handleUser("user-data-request");
                 }}
                 className="px-4 py-2 border-2 rounded-lg hover:cursor-pointer"
               >

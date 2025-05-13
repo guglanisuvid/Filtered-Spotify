@@ -6,12 +6,14 @@ import { useNavigate } from "react-router-dom";
 const SignIn = ({ handleUser, user }) => {
   const navigate = useNavigate();
 
-  const handleSignIn = async () => {
-    await chrome.runtime.sendMessage({
+  const handleSignInClick = async () => {
+    const res = await chrome.runtime.sendMessage({
       type: "user-signin-request",
       target: "background",
     });
-    handleUser("user-data-request");
+    if (res?.type === "signin-success") {
+      handleUser();
+    }
   };
 
   useEffect(() => {
@@ -36,7 +38,7 @@ const SignIn = ({ handleUser, user }) => {
       </div>
       <div>
         <button
-          onClick={handleSignIn}
+          onClick={handleSignInClick}
           className="px-4 py-2 border-2 rounded-lg hover:cursor-pointer"
         >
           SignIn & Authorize Spotify

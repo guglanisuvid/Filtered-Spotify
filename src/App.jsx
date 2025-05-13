@@ -9,9 +9,9 @@ import SpotifyAuthorizationRedirect from "./pages/SpotifyAuthorizationRedirect";
 const App = () => {
   const [user, setUser] = useState();
 
-  const handleUser = (request) => {
+  const handleUser = () => {
     const port = chrome.runtime.connect({
-      name: request,
+      name: "user-data-request",
     });
 
     port.onMessage.addListener((message) => {
@@ -26,7 +26,7 @@ const App = () => {
   };
 
   useEffect(() => {
-    handleUser("user-data-request");
+    handleUser();
   }, []);
 
   return (
@@ -40,7 +40,10 @@ const App = () => {
           path="/filters"
           element={<Filters handleUser={handleUser} user={user} />}
         />
-        <Route path="/dashboard" element={<Dashboard user={user} />} />
+        <Route
+          path="/dashboard"
+          element={<Dashboard handleUser={handleUser} user={user} />}
+        />
         <Route
           path="/spotifyAuthorizationRedirect"
           element={
