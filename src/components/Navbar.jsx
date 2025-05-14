@@ -28,6 +28,13 @@ const Navbar = ({ handleUser, userName }) => {
           >
             <div className="flex flex-col gap-4 justify-between items-center">
               <Link
+                to={"/filters"}
+                onClick={() => setToggleMenu(false)}
+                className="text-[16px] font-medium hover:cursor-pointer"
+              >
+                Filters
+              </Link>
+              <Link
                 to={"/dashboard"}
                 onClick={() => setToggleMenu(false)}
                 className="text-[16px] font-medium hover:cursor-pointer"

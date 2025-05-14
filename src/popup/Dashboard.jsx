@@ -13,7 +13,7 @@ const Dashboard = ({ user }) => {
 
   return (
     <div>
-      <Navbar />
+      <Navbar userName={user?.name} />
       <div>Dashboard</div>
     </div>
   );

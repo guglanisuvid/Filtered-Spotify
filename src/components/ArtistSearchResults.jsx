@@ -1,14 +1,14 @@
-const SelectedArtists = ({ selectedArtists }) => {
+const ArtistSearchResults = ({ artistSearchList }) => {
   return (
     <div className="w-full h-full flex flex-col gap-2 justify-between items-center bg-bg-200 p-2 rounded-xl">
-      <h3 className="text-[16px] font-semibold">Selected Artists</h3>
+      <h3 className="text-[16px] font-semibold">Artist Search Results</h3>
       <div className="flex-1 w-full flex flex-col gap-2 justify-between items-center">
         <div>
-          {selectedArtists.length ? "Hello World" : "No artist selected"}
+          {artistSearchList.length ? "Hello World" : "No artist selected"}
         </div>
       </div>
     </div>
   );
 };
 
-export default SelectedArtists;
+export default ArtistSearchResults;

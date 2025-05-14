@@ -30,7 +30,7 @@ const App = () => {
   }, []);
 
   return (
-    <div className="font-primary bg-bg-100 text-text-100 h-[560px] w-[560px] border-2">
+    <div className="font-primary bg-bg-100 text-text-100 h-[600px] w-[600px] border-2">
       <Routes>
         <Route
           path="/"

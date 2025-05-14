@@ -16,7 +16,7 @@ export function portConnectListener(connectedPort, auth, db) {
       }
     } else if (port.name === "spotify-token-request") { // Handle Spotify tokens request
       try {
-        if (user) await getSpotifyTokens(port, user.uid);
+        if (user) await getSpotifyTokens(db, port, user.uid);
       } catch (error) {
         console.error("Error getting user data: ", error);
       }

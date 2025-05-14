@@ -3,12 +3,14 @@ import { useState } from "react";
 import FilterInputs from "./FilterInputs";
 import SelectedArtists from "./SelectedArtists";
 import FilterResults from "./FilterResults";
+import ArtistSearchResults from "./ArtistSearchResults";
 
 const FiltersContent = () => {
   const [dateRange, setDateRange] = useState([null, null]);
   const [startDate, endDate] = dateRange;
-  const [artists] = useState([]);
+  const [selectedArtists, setSelectedArtists] = useState([]);
   const [artistSearch, setArtistSearch] = useState("");
+  const [artistSearchList, setArtistSearchList] = useState("");
 
   const handleArtistSearchClick = async (key) => {
     try {
@@ -34,7 +36,7 @@ const FiltersContent = () => {
           <FilterInputs
             artistSearch={artistSearch}
             setArtistSearch={setArtistSearch}
-            artists={artists}
+            selectedArtists={selectedArtists}
             handleArtistSearchClick={handleArtistSearchClick}
             startDate={startDate}
             endDate={endDate}
@@ -43,11 +45,16 @@ const FiltersContent = () => {
           />
         </div>
         <div className="col-span-1 h-full">
-          <SelectedArtists artists={artists} />
+          <SelectedArtists selectedArtists={selectedArtists} />
         </div>
       </div>
-      <div className="w-full flex-1">
-        <FilterResults />
+      <div className="flex-1 w-full grid grid-cols-2 gap-4">
+        <div className="col-span-1">
+          <ArtistSearchResults artistSearchList={artistSearchList} />
+        </div>
+        <div className="col-span-1">
+          <FilterResults />
+        </div>
       </div>
     </div>
   );

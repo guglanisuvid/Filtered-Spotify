@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import FiltersContent from "../components/FiltersContent";
+import { SpotifyTokenRefreshPort } from "../popupUtilities/SpotifyTokenRefreshPort";
+import FiltersMessage from "../components/FiltersMessage";
 
 const Filters = ({ handleUser, user }) => {
   const navigate = useNavigate();
@@ -18,19 +20,7 @@ const Filters = ({ handleUser, user }) => {
       } else if (message.type === "spotify-not-authorized") {
         navigate("/spotifyAuthorizationRedirect");
       } else if (message.type === "spotify-token-expired") {
-        const port = chrome.runtime.connect({
-          name: "spotify-token-refresh-request",
-        });
-
-        port.onMessage.addListener((message) => {
-          if (message.type === "user-data-not-available") {
-            // display a message about user data not accessible and signs out the user
-          }
-        });
-
-        return () => {
-          port.disconnect();
-        };
+        SpotifyTokenRefreshPort();
       }
     });
 
@@ -46,9 +36,10 @@ const Filters = ({ handleUser, user }) => {
   }, [user]);
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 justify-between items-center text-center">
+    <div className="w-full h-full flex flex-col gap-2 justify-between items-center text-center">
       <Navbar handleUser={handleUser} userName={user?.name} />
-      <div className="flex-1">
+      <FiltersMessage />
+      <div className="w-full flex-1">
         <FiltersContent />
       </div>
     </div>

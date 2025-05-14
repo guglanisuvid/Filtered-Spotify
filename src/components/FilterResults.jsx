@@ -1,8 +1,10 @@
 const FilterResults = () => {
   return (
-    <div className="w-full h-full flex flex-col gap-2 justify-between items-center bg-bg-200 text-center p-2 rounded-2xl">
-      <h2 className="text-[16px] font-semibold">Filter / Search Results</h2>
-      <div className="w-full flex-1">No results to display yet.</div>
+    <div className="w-full h-full flex flex-col gap-2 justify-between items-center bg-bg-200 p-2 border-2 rounded-xl">
+      <h3 className="text-[16px] font-semibold">Filter Results</h3>
+      <div className="flex-1 w-full flex flex-col gap-2 justify-between items-center">
+        {/* <div>{artists.length ? "Hello World" : "No artist selected"}</div> */}
+      </div>
     </div>
   );
 };
