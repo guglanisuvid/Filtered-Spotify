@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 
 const Dashboard = ({ user }) => {
   const navigate = useNavigate();
@@ -10,7 +11,12 @@ const Dashboard = ({ user }) => {
     }
   }, [user]);
 
-  return <div>Dashboard</div>;
+  return (
+    <div>
+      <Navbar />
+      <div>Dashboard</div>
+    </div>
+  );
 };
 
 export default Dashboard;

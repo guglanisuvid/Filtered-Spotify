@@ -1,6 +1,7 @@
 /* global chrome */
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 
 const SpotifyAuthorizationRedirect = ({ handleUser, user }) => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const SpotifyAuthorizationRedirect = ({ handleUser, user }) => {
 
   return (
     <div className="h-full w-full flex flex-col gap-4 justify-center items-center">
+      <Navbar />
       <h1 className="text-3xl font-semibold text-center">
         Spotify Authorization
       </h1>

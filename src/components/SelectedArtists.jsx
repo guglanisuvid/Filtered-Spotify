@@ -1,5 +1,3 @@
-import React from "react";
-
 const SelectedArtists = ({ artists }) => {
   return (
     <div className="w-full h-full flex flex-col gap-2 justify-between items-center bg-bg-200 p-2 rounded-xl">

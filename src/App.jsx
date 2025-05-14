@@ -1,10 +1,10 @@
 /* global chrome */
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
-import SignIn from "./pages/SignIn";
-import Filters from "./pages/Filters";
-import Dashboard from "./pages/Dashboard";
-import SpotifyAuthorizationRedirect from "./pages/SpotifyAuthorizationRedirect";
+import SignIn from "./popup/SignIn";
+import Filters from "./popup/Filters";
+import Dashboard from "./popup/Dashboard";
+import SpotifyAuthorizationRedirect from "./popup/SpotifyAuthorizationRedirect";
 
 const App = () => {
   const [user, setUser] = useState();

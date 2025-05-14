@@ -1,6 +1,6 @@
 /* global chrome */
 
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const SignIn = ({ handleUser, user }) => {
@@ -9,7 +9,6 @@ const SignIn = ({ handleUser, user }) => {
   const handleSignInClick = async () => {
     const res = await chrome.runtime.sendMessage({
       type: "user-signin-request",
-      target: "background",
     });
     if (res?.type === "signin-success") {
       handleUser();

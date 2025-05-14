@@ -13,10 +13,24 @@ const Filters = ({ handleUser, user }) => {
     });
 
     port.onMessage.addListener((message) => {
-      if (message.type === "spotify-not-authorized") {
+      if (message.type === "user-data-not-available") {
+        // display a message about user data not accessible and signs out the user
+      } else if (message.type === "spotify-not-authorized") {
         navigate("/spotifyAuthorizationRedirect");
-      } else if (message.type === "spotify-refresh-failed") {
-        console.log("Spotify token refresh failed");
+      } else if (message.type === "spotify-token-expired") {
+        const port = chrome.runtime.connect({
+          name: "spotify-token-refresh-request",
+        });
+
+        port.onMessage.addListener((message) => {
+          if (message.type === "user-data-not-available") {
+            // display a message about user data not accessible and signs out the user
+          }
+        });
+
+        return () => {
+          port.disconnect();
+        };
       }
     });
 

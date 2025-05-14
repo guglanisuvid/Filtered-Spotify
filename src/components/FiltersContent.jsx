@@ -1,5 +1,5 @@
 /* global chrome */
-import React, { useState } from "react";
+import { useState } from "react";
 import FilterInputs from "./FilterInputs";
 import SelectedArtists from "./SelectedArtists";
 import FilterResults from "./FilterResults";
@@ -7,17 +7,19 @@ import FilterResults from "./FilterResults";
 const FiltersContent = () => {
   const [dateRange, setDateRange] = useState([null, null]);
   const [startDate, endDate] = dateRange;
-  const [artists, setArtists] = useState([]);
+  const [artists] = useState([]);
   const [artistSearch, setArtistSearch] = useState("");
 
-  const handleArtistSearchClick = () => {
-    if (artistSearch.trim().length) {
-      chrome.runtime.sendMessage({
+  const handleArtistSearchClick = async (key) => {
+    try {
+      const res = await chrome.runtime.sendMessage({
         type: "artist-search-request",
-        artistSearch: artistSearch.trim(),
+        artistSearch: key.trim(),
       });
-    } else {
-      console.log("Please enter a valid artist name");
+
+      console.log(res);
+    } catch (error) {
+      console.error(error);
     }
   };
 
