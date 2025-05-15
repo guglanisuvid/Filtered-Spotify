@@ -5,7 +5,7 @@ import SelectedArtists from "./SelectedArtists";
 import FilterResults from "./FilterResults";
 import ArtistSearchResults from "./ArtistSearchResults";
 
-const FiltersContent = () => {
+const FiltersContent = ({ setMsg }) => {
   const [dateRange, setDateRange] = useState([null, null]);
   const [startDate, endDate] = dateRange;
   const [selectedArtists, setSelectedArtists] = useState([]);
@@ -19,7 +19,9 @@ const FiltersContent = () => {
         artistSearch: key.trim(),
       });
 
-      console.log(res);
+      if (res?.error && res?.type === "artist-search-failed") {
+        setMsg(res?.reason);
+      }
     } catch (error) {
       console.error(error);
     }

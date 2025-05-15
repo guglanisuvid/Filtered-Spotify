@@ -4,29 +4,32 @@ import { isTokenExpired } from "./isTokenExpired";
 
 export const handleArtistSearch = async (artistSearch) => {
     try {
-        if (!artistSearch.length) return { error: true, message: "Please enter a valid artist name" };
+        if (!artistSearch.length) return { error: true, type: "artist-search-failed", reason: "artist-name-not-valid" };
 
         const tokens = await chrome.storage.local.get("spotifyTokens");
 
-        await isTokenExpired(tokens.spotifyTokens);
+        if (await isTokenExpired(tokens.spotifyTokens)) return { error: true, type: "artist-search-failed", reason: "spotify-token-not-valid" };
 
-        // if (artistSearch.trim().length) {
-        //     const getToken = await chrome.storage.local.get("spotifyTokens");
-        //     const accessToken = getToken.spotifyTokens.accessToken;
+        const accessToken = tokens?.spotifyTokens?.accessToken;
 
-        //     const res = await fetch(`${import.meta.env.VITE_SPOTIFY_API_URL}/search?q=${encodeURI(artistSearch)}&type=artist&limit=10`, {
-        //         method: "GET",
-        //         headers: { Authorization: `Bearer ${accessToken}` },
-        //     });
+        const url = new URL('/v1/search', import.meta.env.VITE_SPOTIFY_API_URL);
+        url.search = new URLSearchParams({
+            q: artistSearch,
+            type: 'artist',
+            limit: 10
+        }).toString();
 
-        //     if (res.ok) {
-        //         const data = await res.json();
-        //         console.log(data);
-        //     }
-        //     console.log(res);
-        // } else {
-        //     console.log("Please enter a valid artist name");
-        // }
+        const res = await fetch(url.toString(), {
+            method: "GET",
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (!res.ok) {
+            console.log(await res.text());
+            return { error: true, type: "artist-search-failed", reason: "artist-data-not-fetched" }
+        }
+
+        // return { error: false, type: "artist-search-success", data: await res.json() }
     } catch (error) {
         console.error("Error fetching artist data: ", error);
     }

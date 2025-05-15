@@ -4,7 +4,7 @@ import { firestoreSetSpotifyData } from "./firestoreSetSpotifyData";
 import { spotifyTokenRefresh } from "./spotifyTokenRefresh";
 
 export async function handleSpotifyTokenRefresh(db, port, uid) {
-    const tokens = await chrome.storage.local.get("spotifyTokens")
+    const tokens = await chrome.storage.local.get("spotifyTokens");
     const refreshed = await spotifyTokenRefresh(tokens?.spotifyTokens?.refreshToken);
     if (!refreshed?.access_token) {
         port.postMessage({ type: "spotify-token-refresh-failed" });

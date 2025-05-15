@@ -1,5 +1,5 @@
 /* global chrome */
-import { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import FiltersContent from "../components/FiltersContent";
@@ -8,6 +8,7 @@ import FiltersMessage from "../components/FiltersMessage";
 
 const Filters = ({ handleUser, user }) => {
   const navigate = useNavigate();
+  const [msg, setMsg] = useState("");
 
   useEffect(() => {
     const port = chrome.runtime.connect({
@@ -35,12 +36,18 @@ const Filters = ({ handleUser, user }) => {
     }
   }, [user]);
 
+  useEffect(() => {
+    setInterval(() => {
+      setMsg("");
+    }, 4000);
+  }, [msg]);
+
   return (
     <div className="w-full h-full flex flex-col gap-2 justify-between items-center text-center">
       <Navbar handleUser={handleUser} userName={user?.name} />
-      <FiltersMessage />
+      <FiltersMessage msg={msg} />
       <div className="w-full flex-1">
-        <FiltersContent />
+        <FiltersContent setMsg={setMsg} />
       </div>
     </div>
   );

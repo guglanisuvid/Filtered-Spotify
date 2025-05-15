@@ -30,8 +30,8 @@ export function messageListener(auth) {
         } else if (message.type === "artist-search-request") {
             (async () => {
                 try {
-                    await handleArtistSearch(message.artistSearch)
-                    sendResponse(message);
+                    const res = await handleArtistSearch(message.artistSearch);
+                    sendResponse(res);
                 } catch (error) {
                     sendResponse({ type: "signout-failure", error: error.message });
                 }
