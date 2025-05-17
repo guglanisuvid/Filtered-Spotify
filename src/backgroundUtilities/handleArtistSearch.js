@@ -8,7 +8,7 @@ export const handleArtistSearch = async (artistSearch) => {
 
         const tokens = await chrome.storage.local.get("spotifyTokens");
 
-        if (await isTokenExpired(tokens.spotifyTokens)) return { error: true, type: "artist-search-failed", reason: "spotify-token-not-valid" };
+        if (!tokens || await isTokenExpired(tokens.spotifyTokens)) return { error: true, type: "artist-search-failed", reason: "spotify-token-not-valid" };
 
         const accessToken = tokens?.spotifyTokens?.accessToken;
 
@@ -16,7 +16,8 @@ export const handleArtistSearch = async (artistSearch) => {
         url.search = new URLSearchParams({
             q: artistSearch,
             type: 'artist',
-            limit: 10
+            limit: 10,
+            offset: 0
         }).toString();
 
         const res = await fetch(url.toString(), {
@@ -25,11 +26,28 @@ export const handleArtistSearch = async (artistSearch) => {
         });
 
         if (!res.ok) {
-            console.log(await res.text());
-            return { error: true, type: "artist-search-failed", reason: "artist-data-not-fetched" }
+            return { error: true, type: "artist-search-failed", reason: "artist-data-not-fetched", msg: await res.text() }
         }
 
-        // return { error: false, type: "artist-search-success", data: await res.json() }
+        const data = await res.json();
+
+        await chrome.storage.local.set({
+            artists: {
+                href: data?.artists?.href,
+                next: data?.artists?.next,
+                previous: data?.artists?.previous,
+                total: data?.artists?.total,
+                items: data?.artists?.items.map(artist => ({
+                    id: artist?.id,
+                    name: artist?.name,
+                    popularity: artist?.popularity,
+                    genres: artist?.genres,
+                    image: artist?.images[0]?.url
+                }))
+            }
+        });
+
+        return { error: false, type: "artist-search-success" }
     } catch (error) {
         console.error("Error fetching artist data: ", error);
     }

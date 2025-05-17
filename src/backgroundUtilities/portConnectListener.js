@@ -18,13 +18,13 @@ export function portConnectListener(connectedPort, auth, db) {
       try {
         if (user) await getSpotifyTokens(db, port, user.uid);
       } catch (error) {
-        console.error("Error getting user data: ", error);
+        console.error("Error getting spotify token: ", error);
       }
     } else if (port.name === "spotify-token-refresh-request") { // Handle Spotify token refresh request
       try {
         if (user) await handleSpotifyTokenRefresh(db, port, user.uid);
       } catch (error) {
-        console.error("Error getting user data: ", error);
+        console.error("Error refreshing spotify token: ", error);
       }
     }
 

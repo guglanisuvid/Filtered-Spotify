@@ -6,9 +6,12 @@ import Navbar from "../components/Navbar";
 const SpotifyAuthorizationRedirect = ({ handleUser, user }) => {
   const navigate = useNavigate();
 
-  const handleRedirect = () => {
+  const handleRedirect = async () => {
+    await chrome.runtime.sendMessage({
+      type: "user-signout-request",
+    });
+    handleUser();
     chrome.tabs.create({ url: import.meta.env.VITE_SPOTIFY_AUTHORIZATION_URL });
-    handleUser("signout-request");
   };
 
   useEffect(() => {

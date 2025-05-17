@@ -17,10 +17,19 @@ const Filters = ({ handleUser, user }) => {
 
     port.onMessage.addListener((message) => {
       if (message.type === "user-data-not-available") {
-        // display a message about user data not accessible and signs out the user
+        setMsg(
+          "User date not available. Please Sign in again. Signing Out in 4 seconds..."
+        );
+        setInterval(async () => {
+          await chrome.runtime.sendMessage({
+            type: "user-signout-request",
+          });
+          handleUser();
+        }, 4000);
       } else if (message.type === "spotify-not-authorized") {
         navigate("/spotifyAuthorizationRedirect");
       } else if (message.type === "spotify-token-expired") {
+        setMsg("Spotify token expired. Trying to refresh spotify token...");
         SpotifyTokenRefreshPort();
       }
     });

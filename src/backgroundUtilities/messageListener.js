@@ -8,8 +8,7 @@ export function messageListener(auth) {
         if (message.type === "user-signin-request") { // Handle sign in request
             (async () => {
                 try {
-                    await userSignIn(auth);
-                    sendResponse({ type: "signin-success" });
+                    if (await userSignIn(auth)) sendResponse({ type: "signin-success" });
                 } catch (error) {
                     sendResponse({ type: "signin-failure", error: error.message });
                 }

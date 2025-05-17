@@ -4,6 +4,7 @@ import FilterInputs from "./FilterInputs";
 import SelectedArtists from "./SelectedArtists";
 import FilterResults from "./FilterResults";
 import ArtistSearchResults from "./ArtistSearchResults";
+import { SpotifyTokenRefreshPort } from "../popupUtilities/SpotifyTokenRefreshPort";
 
 const FiltersContent = ({ setMsg }) => {
   const [dateRange, setDateRange] = useState([null, null]);
@@ -20,7 +21,19 @@ const FiltersContent = ({ setMsg }) => {
       });
 
       if (res?.error && res?.type === "artist-search-failed") {
-        setMsg(res?.reason);
+        if (res?.reason === "artist-name-not-valid") {
+          setMsg("Please search a valid artist name.");
+        } else if (res?.reason === "spotify-token-not-valid") {
+          setMsg("Spotify token not valid. Refreshing spotify token...");
+          await SpotifyTokenRefreshPort();
+          await handleArtistSearchClick(key);
+        } else if (res.reason === "artist-data-not-fetched") {
+          setMsg("Could not fetch artist data. Please try again...");
+        }
+      }
+
+      if (!res?.error) {
+        console.log(await chrome.storage.local.get("artists"));
       }
     } catch (error) {
       console.error(error);

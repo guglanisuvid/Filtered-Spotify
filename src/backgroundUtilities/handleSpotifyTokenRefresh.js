@@ -14,7 +14,7 @@ export async function handleSpotifyTokenRefresh(db, port, uid) {
     if (await firestoreSetSpotifyData(db, refreshed, uid)) {
         const updated = await firestoreGetData(db, uid); // Fetch the updated document
         if (!updated) {
-            port.postMessage({ type: "spotify-token-refresh-failed" });
+            port.postMessage({ type: "user-data-not-available" });
             return;
         }
         await chrome.storage.local.set({ spotifyTokens: updated.spotify }); // Store the tokens in local storage area

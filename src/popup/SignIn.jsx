@@ -40,7 +40,7 @@ const SignIn = ({ handleUser, user }) => {
           onClick={handleSignInClick}
           className="px-4 py-2 border-2 rounded-lg hover:cursor-pointer"
         >
-          SignIn & Authorize Spotify
+          SignIn Filtered Spotify
         </button>
       </div>
     </div>
