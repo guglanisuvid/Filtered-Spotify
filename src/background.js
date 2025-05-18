@@ -13,5 +13,5 @@ const db = getFirestore(app); // Initialize Firestore
 let connectedPort = null;
 
 authStateChange(auth, connectedPort);
-messageListener(auth);
+messageListener(auth, db);
 portConnectListener(connectedPort, auth, db);

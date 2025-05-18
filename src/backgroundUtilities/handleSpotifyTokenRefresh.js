@@ -3,23 +3,20 @@ import { firestoreGetData } from "./firestoreGetData";
 import { firestoreSetSpotifyData } from "./firestoreSetSpotifyData";
 import { spotifyTokenRefresh } from "./spotifyTokenRefresh";
 
-export async function handleSpotifyTokenRefresh(db, port, uid) {
+export async function handleSpotifyTokenRefresh(db, uid) {
     const tokens = await chrome.storage.local.get("spotifyTokens");
     const refreshed = await spotifyTokenRefresh(tokens?.spotifyTokens?.refreshToken);
     if (!refreshed?.access_token) {
-        port.postMessage({ type: "spotify-token-refresh-failed" });
-        return;
+        return { error: true, type: "spotify-token-refresh-failed", reason: "token-refresh-failed" };
     }
 
     if (await firestoreSetSpotifyData(db, refreshed, uid)) {
         const updated = await firestoreGetData(db, uid); // Fetch the updated document
         if (!updated) {
-            port.postMessage({ type: "user-data-not-available" });
-            return;
+            return { error: true, type: "spotify-token-refresh-failed", reason: "user-data-not-fetched" };
         }
         await chrome.storage.local.set({ spotifyTokens: updated.spotify }); // Store the tokens in local storage area
-        port.postMessage({ type: "spotify-token-refresh-success" });
-        return updated.spotify.accessToken;
+        return { error: false, type: "spotify-token-refresh-success" };
     }
-    return;
+    return { error: true, type: "spotify-token-refresh-failed", reason: "token-storing-failed" }
 }

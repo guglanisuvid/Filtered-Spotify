@@ -41,6 +41,13 @@ const Navbar = ({ handleUser, userName }) => {
               >
                 Dashboard
               </Link>
+              <Link
+                to={"/profile"}
+                onClick={() => setToggleMenu(false)}
+                className="text-[16px] font-medium hover:cursor-pointer"
+              >
+                See Profile
+              </Link>
               <button
                 onClick={async () => {
                   setToggleMenu(false);

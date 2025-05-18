@@ -14,7 +14,7 @@ const FilterInputs = ({
   handleFilterSongs,
 }) => {
   return (
-    <div className="w-full flex flex-col gap-4 justify-between items-center text-center">
+    <div className="w-full flex flex-col gap-4 justify-between items-center text-center overflow-hidden">
       <div className="w-full flex gap-2 justify-between items-center">
         <input
           className="flex-1 px-4 py-2 bg-bg-200 outline-none rounded-full placeholder:text-text-200 placeholder:opacity-80"

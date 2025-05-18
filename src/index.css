@@ -13,6 +13,10 @@
   --color-bg-100:#0F0F0F;
   --color-bg-200:#1f1f1f;
   --color-bg-300:#353535;
-
+  
   --font-primary:"Space Grotesk";
+}
+
+::-webkit-scrollbar {
+  display: none;
 }

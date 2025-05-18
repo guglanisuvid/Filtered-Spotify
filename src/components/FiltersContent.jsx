@@ -1,10 +1,10 @@
 /* global chrome */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FilterInputs from "./FilterInputs";
 import SelectedArtists from "./SelectedArtists";
 import FilterResults from "./FilterResults";
 import ArtistSearchResults from "./ArtistSearchResults";
-import { SpotifyTokenRefreshPort } from "../popupUtilities/SpotifyTokenRefreshPort";
+import { SpotifyTokenRefreshMessage } from "../popupUtilities/SpotifyTokenRefreshMessage";
 
 const FiltersContent = ({ setMsg }) => {
   const [dateRange, setDateRange] = useState([null, null]);
@@ -25,15 +25,26 @@ const FiltersContent = ({ setMsg }) => {
           setMsg("Please search a valid artist name.");
         } else if (res?.reason === "spotify-token-not-valid") {
           setMsg("Spotify token not valid. Refreshing spotify token...");
-          await SpotifyTokenRefreshPort();
-          await handleArtistSearchClick(key);
+          const response = await SpotifyTokenRefreshMessage();
+          if (response?.error) {
+            if (response?.reason === "token-refresh-failed") {
+              setMsg("Failed to refresh tokens. Please try again...");
+            } else if (response?.reason === "user-data-not-fetched") {
+              setMsg("Could not fetch user data. Please try again...");
+            } else if (response?.reason === "token-storing-failed") {
+              setMsg("Could not store token. Please try again...");
+            }
+          }
+
+          if (!response?.error) handleArtistSearchClick(key);
         } else if (res.reason === "artist-data-not-fetched") {
           setMsg("Could not fetch artist data. Please try again...");
         }
       }
 
       if (!res?.error) {
-        console.log(await chrome.storage.local.get("artists"));
+        const data = await chrome.storage.local.get("artists");
+        setArtistSearchList(data?.artists);
       }
     } catch (error) {
       console.error(error);
@@ -44,10 +55,19 @@ const FiltersContent = ({ setMsg }) => {
     console.log("handleFilterSongs clicked");
   };
 
+  useEffect(() => {
+    const fetchArtistSearchData = async () => {
+      const data = await chrome.storage.local.get("artists");
+      setArtistSearchList(data?.artists);
+    };
+
+    fetchArtistSearchData();
+  });
+
   return (
-    <div className="w-full h-full flex flex-col gap-4 jutify-between items-center text-center p-4">
-      <div className="w-full grid grid-cols-2 gap-4">
-        <div className="col-span-1">
+    <div className="w-full h-full flex flex-col gap-4 jutify-between items-center text-center p-4 overflow-hidden">
+      <div className="w-full grid grid-cols-2 gap-4 overflow-hidden">
+        <div className="col-span-1 overflow-hidden">
           <FilterInputs
             artistSearch={artistSearch}
             setArtistSearch={setArtistSearch}
@@ -59,15 +79,24 @@ const FiltersContent = ({ setMsg }) => {
             handleFilterSongs={handleFilterSongs}
           />
         </div>
-        <div className="col-span-1 h-full">
-          <SelectedArtists selectedArtists={selectedArtists} />
+        <div className="col-span-1 overflow-hidden">
+          <SelectedArtists
+            selectedArtists={selectedArtists}
+            setSelectedArtists={setSelectedArtists}
+          />
         </div>
       </div>
-      <div className="flex-1 w-full grid grid-cols-2 gap-4">
-        <div className="col-span-1">
-          <ArtistSearchResults artistSearchList={artistSearchList} />
+      <div className="flex-1 w-full grid grid-cols-2 gap-4 overflow-hidden">
+        <div className="col-span-1 overflow-hidden">
+          <ArtistSearchResults
+            artistSearchList={artistSearchList}
+            setArtistSearchList={setArtistSearchList}
+            selectedArtists={selectedArtists}
+            setSelectedArtists={setSelectedArtists}
+            setMsg={setMsg}
+          />
         </div>
-        <div className="col-span-1">
+        <div className="col-span-1 overflow-hidden">
           <FilterResults />
         </div>
       </div>

@@ -5,6 +5,7 @@ import SignIn from "./popup/SignIn";
 import Filters from "./popup/Filters";
 import Dashboard from "./popup/Dashboard";
 import SpotifyAuthorizationRedirect from "./popup/SpotifyAuthorizationRedirect";
+import Profile from "./popup/Profile";
 
 const App = () => {
   const [user, setUser] = useState();
@@ -30,7 +31,7 @@ const App = () => {
   }, []);
 
   return (
-    <div className="font-primary bg-bg-100 text-text-100 h-[600px] w-[600px] border-2">
+    <div className="font-primary bg-bg-100 text-text-100 h-[600px] w-[600px] border-2 overflow-hidden scrollbar-none">
       <Routes>
         <Route
           path="/"
@@ -43,6 +44,10 @@ const App = () => {
         <Route
           path="/dashboard"
           element={<Dashboard handleUser={handleUser} user={user} />}
+        />
+        <Route
+          path="/profile"
+          element={<Profile handleUser={handleUser} user={user} />}
         />
         <Route
           path="/spotifyAuthorizationRedirect"

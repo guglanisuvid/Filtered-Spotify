@@ -14,13 +14,10 @@ export async function getSpotifyTokens(db, port, uid) {
         return;
     }
 
-    await chrome.storage.local.set({ spotifyTokens: result.spotify }); // Store the tokens in local storage area
-
-    if ((new Date() - new Date(result.spotify.recievedAt)) / 1000 > result.spotify.expiresIn - 30) { // Check if the token is expired
-        port.postMessage({ type: "spotify-token-expired" });
-        return;
+    if (await chrome.storage.local.set({ spotifyTokens: result.spotify })) {
+        port.postMessage({ type: "fetch-spotify-tokens-success" }); // Notify the popup that the tokens have been updated
+        return result.spotify.accessToken; // Return the access token
     }
 
-    port.postMessage({ type: "spotify-tokens-updated" }); // Notify the popup that the tokens have been updated
-    return result.spotify.accessToken; // Return the access token
+    return;
 };

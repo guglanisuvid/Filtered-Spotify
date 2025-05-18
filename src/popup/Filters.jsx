@@ -1,9 +1,8 @@
 /* global chrome */
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import FiltersContent from "../components/FiltersContent";
-import { SpotifyTokenRefreshPort } from "../popupUtilities/SpotifyTokenRefreshPort";
 import FiltersMessage from "../components/FiltersMessage";
 
 const Filters = ({ handleUser, user }) => {
@@ -28,9 +27,6 @@ const Filters = ({ handleUser, user }) => {
         }, 4000);
       } else if (message.type === "spotify-not-authorized") {
         navigate("/spotifyAuthorizationRedirect");
-      } else if (message.type === "spotify-token-expired") {
-        setMsg("Spotify token expired. Trying to refresh spotify token...");
-        SpotifyTokenRefreshPort();
       }
     });
 
@@ -52,10 +48,10 @@ const Filters = ({ handleUser, user }) => {
   }, [msg]);
 
   return (
-    <div className="w-full h-full flex flex-col gap-2 justify-between items-center text-center">
+    <div className="w-full h-full flex flex-col gap-2 justify-between items-center text-center overflow-hidden">
       <Navbar handleUser={handleUser} userName={user?.name} />
       <FiltersMessage msg={msg} />
-      <div className="w-full flex-1">
+      <div className="w-full flex-1 overflow-hidden">
         <FiltersContent setMsg={setMsg} />
       </div>
     </div>

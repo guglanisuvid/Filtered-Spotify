@@ -1,6 +1,5 @@
 /* global chrome */
 import { getSpotifyTokens } from "./getSpotifyTokens";
-import { handleSpotifyTokenRefresh } from "./handleSpotifyTokenRefresh";
 import { userDataMessage } from "./userDataMessage";
 
 export function portConnectListener(connectedPort, auth, db) {
@@ -19,12 +18,6 @@ export function portConnectListener(connectedPort, auth, db) {
         if (user) await getSpotifyTokens(db, port, user.uid);
       } catch (error) {
         console.error("Error getting spotify token: ", error);
-      }
-    } else if (port.name === "spotify-token-refresh-request") { // Handle Spotify token refresh request
-      try {
-        if (user) await handleSpotifyTokenRefresh(db, port, user.uid);
-      } catch (error) {
-        console.error("Error refreshing spotify token: ", error);
       }
     }
 
