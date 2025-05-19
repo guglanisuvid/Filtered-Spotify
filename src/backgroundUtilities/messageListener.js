@@ -5,6 +5,8 @@ import { handleArtistSearch } from "./handleArtistSearch"
 import { handleSpotifyTokenRefresh } from "./handleSpotifyTokenRefresh";
 import { handlePreviousNextArtistSearch } from "./handlePreviousNextArtistSearch";
 import { handleGetSpotifyProfile } from "./handleGetSpotifyProfile";
+import { handleGetSpotifyUserTop } from "./handleGetSpotifyUserTop";
+import { handleGetUserFollowedArtists } from "./handleGetUserFollowedArtists";
 
 export function messageListener(auth, db) {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -13,8 +15,7 @@ export function messageListener(auth, db) {
                 try {
                     const user = auth.currentUser;
                     if (user) {
-                        const result = await handleSpotifyTokenRefresh(db, user.uid);
-                        sendResponse(result)
+                        sendResponse(await handleSpotifyTokenRefresh(db, user.uid))
                     };
                 } catch (error) {
                     sendResponse({ type: "token-refresh-failure", error: error.message });
@@ -46,10 +47,9 @@ export function messageListener(auth, db) {
         } else if (message.type === "artist-search-request") {
             (async () => {
                 try {
-                    const res = await handleArtistSearch(message.artistSearch);
-                    sendResponse(res);
+                    sendResponse(await handleArtistSearch(message.artistSearch));
                 } catch (error) {
-                    sendResponse({ type: "signout-failure", error: error.message });
+                    sendResponse({ type: "artist-search-failure", error: error.message });
                 }
             })();
 
@@ -57,10 +57,9 @@ export function messageListener(auth, db) {
         } else if (message.type === "previous-next-artist-search-request") {
             (async () => {
                 try {
-                    const res = await handlePreviousNextArtistSearch(message.url);
-                    sendResponse(res);
+                    sendResponse(await handlePreviousNextArtistSearch(message.url));
                 } catch (error) {
-                    sendResponse({ type: "signout-failure", error: error.message });
+                    sendResponse({ type: "previous-next-artist-search-failure", error: error.message });
                 }
             })();
 
@@ -68,10 +67,29 @@ export function messageListener(auth, db) {
         } else if (message.type === "spotify-profile-search-request") {
             (async () => {
                 try {
-                    const res = await handleGetSpotifyProfile();
-                    sendResponse(res);
+                    sendResponse(await handleGetSpotifyProfile());
                 } catch (error) {
-                    sendResponse({ type: "signout-failure", error: error.message });
+                    sendResponse({ type: "spotify-profile-search-failure", error: error.message });
+                }
+            })();
+
+            return true;
+        } else if (message.type === "spotify-user-top-request") {
+            (async () => {
+                try {
+                    sendResponse(await handleGetSpotifyUserTop());
+                } catch (error) {
+                    sendResponse({ type: "spotify-user-top-failure", error: error.message });
+                }
+            })();
+
+            return true;
+        } else if (message.type === "spotify-user-followed-artists-request") {
+            (async () => {
+                try {
+                    sendResponse(await handleGetUserFollowedArtists());
+                } catch (error) {
+                    sendResponse({ type: "spotify-user-followed-artists-failure", error: error.message });
                 }
             })();
 

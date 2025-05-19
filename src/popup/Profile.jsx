@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import { SpotifyTokenRefreshMessage } from "../popupUtilities/SpotifyTokenRefreshMessage";
+import { useNavigate } from "react-router-dom";
 
 const Profile = ({ handleUser, user }) => {
+  const navigate = useNavigate();
   const [profileData, setProfileData] = useState();
   const [msg, setMsg] = useState("");
   useEffect(() => {
@@ -43,6 +45,18 @@ const Profile = ({ handleUser, user }) => {
 
     getProfileData();
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/");
+    }
+  }, [user]);
+
+  useEffect(() => {
+    setInterval(() => {
+      setMsg("");
+    }, 4000);
+  }, [msg]);
 
   return (
     <div className="w-full h-full flex flex-col gap-2 justify-between items-center text-center overflow-hidden">
