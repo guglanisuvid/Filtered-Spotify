@@ -7,6 +7,7 @@ import { handlePreviousNextArtistSearch } from "./handlePreviousNextArtistSearch
 import { handleGetSpotifyProfile } from "./handleGetSpotifyProfile";
 import { handleGetSpotifyUserTop } from "./handleGetSpotifyUserTop";
 import { handleGetUserFollowedArtists } from "./handleGetUserFollowedArtists";
+import { handleGetFilteredSongs } from "./handleGetFilteredSongs";
 
 export function messageListener(auth, db) {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -88,6 +89,16 @@ export function messageListener(auth, db) {
             (async () => {
                 try {
                     sendResponse(await handleGetUserFollowedArtists());
+                } catch (error) {
+                    sendResponse({ type: "spotify-user-followed-artists-failure", error: error.message });
+                }
+            })();
+
+            return true;
+        } else if (message.type === "filter-request") {
+            (async () => {
+                try {
+                    sendResponse(await handleGetFilteredSongs(message?.selectedArtists, message?.dateRange));
                 } catch (error) {
                     sendResponse({ type: "spotify-user-followed-artists-failure", error: error.message });
                 }

@@ -11,7 +11,7 @@ const FilterInputs = ({
   startDate,
   endDate,
   setDateRange,
-  handleFilterSongs,
+  handleFilterSongsClick,
 }) => {
   return (
     <div className="w-full flex flex-col gap-4 justify-between items-center text-center overflow-hidden">
@@ -51,7 +51,7 @@ const FilterInputs = ({
         isClearable
       />
       <button
-        onClick={handleFilterSongs}
+        onClick={handleFilterSongsClick}
         className="w-full px-4 py-2 bg-text-100 text-bg-200 font-semibold outline-none rounded-full"
       >
         Get Filtered Results
