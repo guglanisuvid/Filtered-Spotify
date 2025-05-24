@@ -40,9 +40,13 @@ export const handleGetFilteredSongs = async (selectedArtists, dateRange) => {
         const playlistData = await createPlaylist(selectedArtists, dateRange, accessToken);
         const playlistId = playlistData?.playlist?.id;
 
-        console.log(await addTracksToPlaylist(playlistId, filteredTracks, accessToken));
+        const pstData = await addTracksToPlaylist(playlistId, filteredTracks, accessToken);
+        if (!pstData?.error) {
+            const playlist = await getPlaylist(playlistId, accessToken);
+            return playlist;
+        }
 
-        // return { error: false, type: "filter-request-success", tracks: filteredTracks }
+        return { error: true, type: "filter-request-failed", reason: "play-not-fetched", msg: await pstData.text() }
     } catch (error) {
         console.error("Error fetching songs: ", error);
     }
@@ -219,4 +223,21 @@ const addTracksToPlaylist = async (playlistId, filteredTracks, accessToken) => {
     }
 
     return { error: false, type: "filter-request-success" }
+}
+
+const getPlaylist = async (playlistId, accessToken) => {
+    const url = new URL(`v1/playlists/${playlistId}`, import.meta.env.VITE_SPOTIFY_API_URL);
+
+    const res = await fetch(url.toString(), {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${accessToken}`
+        }
+    });
+
+    if (!res.ok) {
+        return { error: true, type: "filter-request-failed", reason: "paylist-not-fetched", msg: await res.text() }
+    }
+
+    return { error: false, type: "filter-request-success", playlist: await res.json() }
 }

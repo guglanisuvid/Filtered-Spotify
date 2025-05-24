@@ -12,7 +12,7 @@ const FiltersContent = ({ setMsg }) => {
   const [selectedArtists, setSelectedArtists] = useState([]);
   const [artistSearch, setArtistSearch] = useState("");
   const [artistSearchList, setArtistSearchList] = useState("");
-  const [filteredResults, setFilteredResults] = useState([]);
+  const [filteredResult, setFilteredResult] = useState();
 
   const handleArtistSearchClick = async (key) => {
     try {
@@ -92,13 +92,11 @@ const FiltersContent = ({ setMsg }) => {
         }
       }
 
-      if (!res?.error) setFilteredResults(res?.tracks);
+      if (!res?.error) setFilteredResult(res?.playlist);
     } catch (error) {
       console.error(error);
     }
   };
-
-  useEffect(() => console.log(filteredResults), [filteredResults]); //Pending tasks - creating the readme file for both loopverse and filtered spotify, also adding the moving text for loopverse.
 
   useEffect(() => {
     const fetchArtistSearchData = async () => {
@@ -142,7 +140,7 @@ const FiltersContent = ({ setMsg }) => {
           />
         </div>
         <div className="col-span-1 overflow-hidden">
-          <FilterResults />
+          <FilterResults filteredResult={filteredResult} />
         </div>
       </div>
     </div>

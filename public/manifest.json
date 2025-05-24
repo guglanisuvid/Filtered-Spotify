@@ -6,9 +6,9 @@
   "action": {
       "default_popup": "index.html",
       "default_icon": {
-        "16": "/vite.svg",
-        "48": "/vite.svg",
-        "128": "/vite.svg"
+        "16": "/filtered_spotify_logo.png",
+        "48": "/filtered_spotify_logo.png",
+        "128": "/filtered_spotify_logo.png"
       }
     },
     "background": {
@@ -16,9 +16,9 @@
       "type": "module"
     },
     "icons": {
-      "16": "/vite.svg",
-      "48": "/vite.svg",
-      "128": "/vite.svg"
+      "16": "/filtered_spotify_logo.png",
+      "48": "/filtered_spotify_logo.png",
+      "128": "/filtered_spotify_logo.png"
     },
   "permissions": [
       "activeTab",
